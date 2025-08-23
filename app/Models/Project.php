@@ -2,31 +2,26 @@
 
 namespace App\Models;
 
-use App\Core\HasLogsActivity;
-use App\Core\LogsActivity;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Project extends Model implements HasLogsActivity
+class Project extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
         'description',
         'owner_id',
         'ticket_prefix',
-        'company_id'
+        'company_id',
     ];
 
-    protected static function boot()
+    protected static function booted(): void
     {
-        parent::boot();
         static::addGlobalScope('order', function (Builder $builder) {
             $builder->orderBy('created_at', 'desc');
         });
@@ -40,29 +35,5 @@ class Project extends Model implements HasLogsActivity
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
-    }
-
-    public function tickets(): HasMany
-    {
-        return $this->hasMany(Ticket::class);
-    }
-
-    public function favoriteUsers(): BelongsToMany
-    {
-        $query = $this->belongsToMany(User::class, 'favorite_projects', 'project_id', 'user_id');
-        if (auth()->user()->can('View own projects') && !auth()->user()->can('View all projects')) {
-            $query->where('user_id', auth()->user()->id);
-        }
-        return $query;
-    }
-
-    public function __toString(): string
-    {
-        return $this->name;
-    }
-
-    public function activityLogLink(): string
-    {
-        return route('home');
     }
 }
